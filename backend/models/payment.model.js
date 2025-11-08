@@ -39,6 +39,7 @@ const paymentSchema = new mongoose.Schema({
   },
   stripePaymentId: String,
   stripeCustomerId: String,
+  stripeSessionId: String,
   receiptUrl: String,
   description: String,
   metadata: {
@@ -60,7 +61,7 @@ const subscriptionSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['basic', 'premium', 'elite'],
+    enum: ['basic', 'premium', 'annual'],
     required: [true, 'Please provide subscription plan']
   },
   amount: {
@@ -78,8 +79,8 @@ const subscriptionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'canceled', 'expired', 'past_due'],
-    default: 'active'
+    enum: ['pending', 'active', 'canceled', 'expired', 'past_due', 'payment_failed'],
+    default: 'pending'
   },
   startDate: {
     type: Date,
@@ -91,8 +92,26 @@ const subscriptionSchema = new mongoose.Schema({
     default: true
   },
   stripeSubscriptionId: String,
+  stripeProductId: String,
   stripePriceId: String,
+  stripeSessionId: String,
+  currentPeriodStart: Date,
+  currentPeriodEnd: Date,
+  cancelAtPeriodEnd: {
+    type: Boolean,
+    default: false
+  },
+  canceledAt: Date,
   cancelReason: String,
+  paymentHistory: [{
+    amount: Number,
+    date: Date,
+    status: String,
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Payment'
+    }
+  }],
   payments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Payment'

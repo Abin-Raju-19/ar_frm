@@ -38,19 +38,20 @@ exports.handlePaymentIntentSucceeded = async (paymentIntent) => {
         payment: payment._id
       });
     } else if (payment.paymentType === 'subscription' && payment.relatedTo) {
-      await Subscription.findByIdAndUpdate(payment.relatedTo, {
-        status: 'active',
-        paymentHistory: [...(payment.paymentHistory || []), {
-          amount: payment.amount,
-          date: new Date(),
-          status: 'completed',
-          paymentId: payment._id
-        }]
-      });
-
-      // Update user subscription status
+      // Get existing subscription to preserve payment history
       const subscription = await Subscription.findById(payment.relatedTo);
       if (subscription) {
+        await Subscription.findByIdAndUpdate(payment.relatedTo, {
+          status: 'active',
+          paymentHistory: [...(subscription.paymentHistory || []), {
+            amount: payment.amount,
+            date: new Date(),
+            status: 'completed',
+            paymentId: payment._id
+          }]
+        });
+
+        // Update user subscription status
         await User.findByIdAndUpdate(subscription.user, {
           subscriptionStatus: 'active',
           subscriptionPlan: subscription.plan,
@@ -89,7 +90,7 @@ exports.handlePaymentIntentFailed = async (paymentIntent) => {
     // Handle different payment types
     if (payment.paymentType === 'appointment' && payment.relatedTo) {
       await Appointment.findByIdAndUpdate(payment.relatedTo, {
-        status: 'payment_failed'
+        status: 'pending' // Reset to pending on payment failure
       });
     } else if (payment.paymentType === 'subscription' && payment.relatedTo) {
       await Subscription.findByIdAndUpdate(payment.relatedTo, {

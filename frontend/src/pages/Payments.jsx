@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { usePayments } from '../context/PaymentContext';
-import { useAuth } from '../context/AuthContext';
+import { usePayments } from '../context/payment';
+import { useAuth } from '../context/auth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -21,7 +21,7 @@ const Payments = () => {
     error,
     addPaymentMethod,
     removePaymentMethod,
-    createSubscription,
+    createSubscriptionCheckout,
     cancelSubscription,
   } = usePayments();
 
@@ -40,7 +40,6 @@ const Payments = () => {
   
   const [subscriptionForm, setSubscriptionForm] = useState({
     plan: 'basic',
-    paymentMethodId: '',
   });
   
   // State for selected subscription to cancel
@@ -100,25 +99,31 @@ const Payments = () => {
     e.preventDefault();
     setOperationLoading(true);
     setOperationError(null);
+    setOperationSuccess(null);
     
     try {
       // Validate form data
-      if (!subscriptionForm.plan || !subscriptionForm.paymentMethodId) {
-        setOperationError('Please select a plan and payment method');
+      if (!subscriptionForm.plan) {
+        setOperationError('Please select a plan');
         setOperationLoading(false);
         return;
       }
       
-      // Create subscription
-      await createSubscription(subscriptionForm);
-      setOperationSuccess('Subscription created successfully');
-      setIsSubscribeModalOpen(false);
-      resetSubscriptionForm();
+      // Create subscription checkout session
+      const checkoutData = await createSubscriptionCheckout(subscriptionForm.plan);
+      
+      // Redirect to Stripe checkout
+      if (checkoutData?.data?.sessionUrl) {
+        window.location.href = checkoutData.data.sessionUrl;
+      } else if (checkoutData?.sessionUrl) {
+        window.location.href = checkoutData.sessionUrl;
+      } else {
+        setOperationError('Failed to get checkout URL');
+        setOperationLoading(false);
+      }
     } catch (error) {
       setOperationError(error.response?.data?.message || 'Failed to create subscription');
-    } finally {
       setOperationLoading(false);
-      setTimeout(() => setOperationSuccess(null), 3000);
     }
   };
 
@@ -173,7 +178,6 @@ const Payments = () => {
   const resetSubscriptionForm = () => {
     setSubscriptionForm({
       plan: 'basic',
-      paymentMethodId: paymentMethods.length > 0 ? paymentMethods[0]._id : '',
     });
     setOperationError(null);
   };
@@ -526,37 +530,11 @@ const Payments = () => {
               </div>
             </div>
             
-            {paymentMethods.length > 0 ? (
-              <Select
-                label="Payment Method"
-                name="paymentMethodId"
-                value={subscriptionForm.paymentMethodId}
-                onChange={handleSubscriptionInputChange}
-                options={paymentMethods.map(method => ({
-                  value: method._id,
-                  label: `${formatCardNumber(method.cardNumber)} (${method.expiryDate})`,
-                }))}
-                required
-              />
-            ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
-                <p className="text-yellow-800 text-sm">
-                  You need to add a payment method before subscribing.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => {
-                    setIsSubscribeModalOpen(false);
-                    setTimeout(() => openAddPaymentMethodModal(), 300);
-                  }}
-                >
-                  Add Payment Method
-                </Button>
-              </div>
-            )}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4">
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                You will be redirected to Stripe's secure checkout page to complete your subscription payment.
+              </p>
+            </div>
             
             <div className="flex justify-end space-x-2">
               <Button
@@ -569,9 +547,9 @@ const Payments = () => {
               </Button>
               <Button
                 type="submit"
-                disabled={operationLoading || paymentMethods.length === 0}
+                disabled={operationLoading}
               >
-                {operationLoading ? 'Processing...' : 'Subscribe'}
+                {operationLoading ? 'Processing...' : 'Continue to Checkout'}
               </Button>
             </div>
           </form>

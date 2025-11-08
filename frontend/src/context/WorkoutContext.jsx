@@ -1,22 +1,25 @@
+import React from 'react';
 import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from './auth';
 
 const WorkoutContext = createContext();
+
+export default WorkoutContext;
 export const WorkoutProvider = ({ children }) => {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (currentUser) {
+    if (!authLoading && currentUser) {
       fetchWorkouts();
-    } else {
+    } else if (!authLoading && !currentUser) {
       setWorkouts([]);
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, authLoading]);
 
   const fetchWorkouts = async () => {
     try {
@@ -29,7 +32,9 @@ export const WorkoutProvider = ({ children }) => {
         },
       };
       const response = await axios.get('/api/workouts', config);
-      setWorkouts(response.data);
+      // Backend returns { status, results, data: { workouts } }
+      const workoutsData = response.data?.data?.workouts || response.data || [];
+      setWorkouts(Array.isArray(workoutsData) ? workoutsData : []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching workouts:', error);

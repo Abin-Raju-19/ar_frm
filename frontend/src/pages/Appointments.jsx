@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useAppointments } from '../context/AppointmentContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAppointments } from '../context/appointment';
+import { useAuth } from '../context/auth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -42,12 +43,26 @@ const Appointments = () => {
 
   useEffect(() => {
     // Fetch trainers for the dropdown
-    // This would be replaced with actual API call in a real app
-    setTrainers([
-      { id: '1', name: 'John Doe' },
-      { id: '2', name: 'Jane Smith' },
-      { id: '3', name: 'Mike Johnson' },
-    ]);
+    const fetchTrainers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        const response = await axios.get('/api/trainers', config);
+        const trainersData = response.data?.data?.trainers || [];
+        setTrainers(trainersData.map(trainer => ({
+          id: trainer._id,
+          name: trainer.user?.name || 'Unknown Trainer'
+        })));
+      } catch (error) {
+        console.error('Error fetching trainers:', error);
+        setTrainers([]);
+      }
+    };
+    fetchTrainers();
   }, []);
 
   const handleInputChange = (e) => {
@@ -71,22 +86,36 @@ const Appointments = () => {
 
       // Format date and time for API
       const dateTime = new Date(`${formData.date}T${formData.time}`);
+      const endTime = new Date(dateTime.getTime() + 60 * 60 * 1000); // 1 hour later
       
       const appointmentData = {
         date: dateTime,
-        trainerId: formData.trainer,
+        startTime: formData.time,
+        endTime: endTime.toTimeString().slice(0, 5),
+        trainer: formData.trainer,
         type: formData.type,
-        notes: formData.notes
+        location: 'online',
+        notes: formData.notes,
+        price: 50
       };
 
       const newAppointment = await createAppointment(appointmentData);
       setFormSuccess('Appointment created successfully!');
       setIsCreateModalOpen(false);
       
-      // Redirect to payment if needed
-      if (newAppointment.requiresPayment) {
-        const session = await createCheckoutSession(newAppointment._id);
-        window.location.href = session.url;
+      // Redirect to payment if needed (appointment has a price)
+      if (newAppointment.price && newAppointment.price > 0) {
+        try {
+          const session = await createCheckoutSession(newAppointment._id);
+          // Redirect to Stripe checkout
+          if (session?.data?.sessionUrl) {
+            window.location.href = session.data.sessionUrl;
+          } else if (session?.sessionUrl) {
+            window.location.href = session.sessionUrl;
+          }
+        } catch (error) {
+          console.error('Failed to create checkout session:', error);
+        }
       }
     } catch (error) {
       setFormError(error.response?.data?.message || 'Failed to create appointment');
@@ -111,11 +140,15 @@ const Appointments = () => {
 
       // Format date and time for API
       const dateTime = new Date(`${formData.date}T${formData.time}`);
+      const endTime = new Date(dateTime.getTime() + 60 * 60 * 1000); // 1 hour later
       
       const appointmentData = {
         date: dateTime,
-        trainerId: formData.trainer,
+        startTime: formData.time,
+        endTime: endTime.toTimeString().slice(0, 5),
+        trainer: formData.trainer,
         type: formData.type,
+        location: selectedAppointment?.location || 'online',
         notes: formData.notes
       };
 
@@ -154,8 +187,8 @@ const Appointments = () => {
     
     setFormData({
       date,
-      time,
-      trainer: appointment.trainerId,
+      time: appointment.startTime || time,
+      trainer: appointment.trainer?._id || appointment.trainer || '',
       type: appointment.type,
       notes: appointment.notes || ''
     });
@@ -300,6 +333,30 @@ const Appointments = () => {
                     <div className="flex justify-end space-x-2">
                       {!isPast && !isCancelled && (
                         <>
+                          {appointment.price > 0 && !appointment.payment && appointment.status !== 'confirmed' && (
+                            <Button 
+                              variant="primary" 
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  setActionLoading(true);
+                                  const session = await createCheckoutSession(appointment._id);
+                                  if (session?.data?.sessionUrl) {
+                                    window.location.href = session.data.sessionUrl;
+                                  } else if (session?.sessionUrl) {
+                                    window.location.href = session.sessionUrl;
+                                  }
+                                } catch (error) {
+                                  setFormError(error.response?.data?.message || 'Failed to create checkout session');
+                                } finally {
+                                  setActionLoading(false);
+                                }
+                              }}
+                              disabled={actionLoading}
+                            >
+                              {actionLoading ? 'Processing...' : 'Pay Now'}
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -330,8 +387,23 @@ const Appointments = () => {
                     </p>
                     <p>
                       <span className="font-medium">Trainer:</span>{' '}
-                      {appointment.trainerName || 'Not assigned'}
+                      {appointment.trainer?.user?.name || appointment.trainer?.name || 'Not assigned'}
                     </p>
+                    {appointment.startTime && appointment.endTime && (
+                      <p>
+                        <span className="font-medium">Time:</span>{' '}
+                        {appointment.startTime} - {appointment.endTime}
+                      </p>
+                    )}
+                    {appointment.price > 0 && (
+                      <p>
+                        <span className="font-medium">Price:</span>{' '}
+                        ${appointment.price.toFixed(2)}
+                        {appointment.payment && (
+                          <Badge variant="success" className="ml-2">Paid</Badge>
+                        )}
+                      </p>
+                    )}
                     {appointment.notes && (
                       <p>
                         <span className="font-medium">Notes:</span>{' '}

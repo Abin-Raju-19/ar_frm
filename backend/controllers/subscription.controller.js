@@ -1,3 +1,4 @@
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { Subscription } = require('../models/payment.model');
 const User = require('../models/user.model');
 const stripeUtils = require('../utils/stripe.utils');

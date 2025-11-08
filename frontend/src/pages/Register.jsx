@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth';
 import Layout from '../components/layout/Layout';
@@ -6,6 +6,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
+import Select from '../components/ui/Select';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'user',
+    securityCode: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,15 +39,32 @@ export default function Register() {
       return setError('Passwords do not match');
     }
 
-    // Validate password strength
+    // Validate password strength (frontend hint; backend enforces 8)
     if (formData.password.length < 6) {
       return setError('Password must be at least 6 characters');
+    }
+
+    // Validate security code based on role
+    if (formData.role === 'admin') {
+      if (formData.securityCode !== '2221') {
+        return setError('Invalid security code for Admin');
+      }
+    } else if (formData.role === 'trainer') {
+      if (formData.securityCode !== '222') {
+        return setError('Invalid security code for Trainer');
+      }
     }
 
     setLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password);
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        securityCode: formData.securityCode
+      });
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to create an account. Please try again.');
@@ -121,6 +141,33 @@ export default function Register() {
               placeholder="••••••••"
             />
 
+            <Select
+              label="Role"
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              options={[
+                { value: 'user', label: 'User' },
+                { value: 'trainer', label: 'Trainer' },
+                { value: 'admin', label: 'Admin' },
+              ]}
+              required
+            />
+
+            {(formData.role === 'admin' || formData.role === 'trainer') && (
+              <Input
+                label="Security Code"
+                id="securityCode"
+                type="text"
+                name="securityCode"
+                value={formData.securityCode}
+                onChange={handleChange}
+                required
+                placeholder={formData.role === 'admin' ? 'Enter admin security code' : 'Enter trainer security code'}
+              />
+            )}
+
             <div className="flex items-center">
               <input
                 id="terms"
@@ -154,10 +201,9 @@ export default function Register() {
               type="submit"
               variant="primary"
               className="w-full"
-              loading={loading}
               disabled={loading}
             >
-              Sign up
+              {loading ? 'Signing up...' : 'Sign up'}
             </Button>
 
             <div className="text-center mt-4">

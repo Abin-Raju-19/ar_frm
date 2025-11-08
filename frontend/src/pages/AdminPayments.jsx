@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { usePayments } from '../context/PaymentContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from 'react';
+import { usePayments } from '../context/payment';
+import { useAuth } from '../context/auth';
 import axios from 'axios';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';

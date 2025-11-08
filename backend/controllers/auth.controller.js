@@ -39,7 +39,7 @@ const createSendToken = (user, statusCode, res) => {
  */
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, securityCode } = req.body;
 
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
@@ -50,12 +50,33 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Validate role-specific security codes
+    let finalRole = role || 'user';
+    if (finalRole === 'admin') {
+      if (securityCode !== '2221') {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Invalid security code for Admin'
+        });
+      }
+    } else if (finalRole === 'trainer') {
+      if (securityCode !== '222') {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Invalid security code for Trainer'
+        });
+      }
+    } else {
+      // For 'user' or unspecified, no security code required
+      finalRole = 'user';
+    }
+
     // Create new user
     const newUser = await User.create({
       name,
       email,
       password,
-      role: role || 'user' // Default role is 'user'
+      role: finalRole // Default role is 'user' if not provided
     });
 
     createSendToken(newUser, 201, res);

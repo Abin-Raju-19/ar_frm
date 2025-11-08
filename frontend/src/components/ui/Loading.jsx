@@ -1,5 +1,4 @@
 import React from 'react';
-
 export default function Loading({ size = 'md', className = '' }) {
   const sizeClasses = {
     sm: 'h-4 w-4',

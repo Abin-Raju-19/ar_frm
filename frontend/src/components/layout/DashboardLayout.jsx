@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth';
 
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,6 +35,30 @@ export default function DashboardLayout({ children }) {
       { name: 'Payments', href: '/admin/payments', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
       { name: 'Settings', href: '/admin/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
     ],
+  };
+
+  // Normalize target paths to match existing role-specific routes
+  const normalizeHref = (href) => {
+    if (userRole === 'admin') {
+      if (href === '/dashboard') return '/admin';
+      if (href === '/appointments') return '/admin/appointments';
+      if (href === '/workouts') return '/admin/workouts';
+      if (href === '/nutrition') return '/admin/nutrition';
+      if (href === '/payments') return '/admin/payments';
+      if (href.startsWith('/admin')) return href;
+      return '/admin';
+    }
+    if (userRole === 'trainer') {
+      if (href === '/dashboard') return '/trainer';
+      if (href === '/appointments') return '/trainer/appointments';
+      if (href === '/workouts') return '/trainer/workouts';
+      if (href === '/nutrition') return '/trainer/nutrition';
+      if (href === '/payments') return '/trainer/payments';
+      if (href.startsWith('/trainer')) return href;
+      return '/trainer';
+    }
+    // default user
+    return href;
   };
 
   const currentNavigation = navigation[userRole] || navigation.user;
@@ -89,7 +113,7 @@ export default function DashboardLayout({ children }) {
                 return (
                   <Link
                     key={item.name}
-                    to={item.href}
+                    to={normalizeHref(item.href)}
                     className={`${isActive ? 'bg-gray-100 text-primary-600 dark:bg-gray-900 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-700'} group flex items-center px-2 py-2 text-base font-medium rounded-md`}
                     onClick={() => setIsSidebarOpen(false)}
                   >
@@ -131,7 +155,7 @@ export default function DashboardLayout({ children }) {
                   return (
                     <Link
                       key={item.name}
-                      to={item.href}
+                      to={normalizeHref(item.href)}
                       className={`${isActive ? 'bg-gray-100 text-primary-600 dark:bg-gray-900 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-700'} group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
                     >
                       <svg

@@ -36,6 +36,15 @@ const userSchema = new mongoose.Schema({
     bodyFatPercentage: Number,
     restingHeartRate: Number
   },
+  subscriptionStatus: {
+    type: String,
+    enum: ['active', 'canceled', 'expired', 'none'],
+    default: 'none'
+  },
+  subscriptionPlan: String,
+  subscriptionExpiry: Date,
+  stripeCustomerId: String,
+  defaultPaymentMethod: String,
   createdAt: {
     type: Date,
     default: Date.now

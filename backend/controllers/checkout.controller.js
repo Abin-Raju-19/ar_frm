@@ -15,8 +15,10 @@ exports.createAppointmentCheckout = async (req, res) => {
   try {
     const appointmentId = req.params.id;
     
-    // Find appointment
-    const appointment = await Appointment.findById(appointmentId);
+    // Find appointment and populate trainer
+    const appointment = await Appointment.findById(appointmentId)
+      .populate('trainer', 'user')
+      .populate('trainer.user', 'name email');
     
     if (!appointment) {
       return res.status(404).json({
@@ -61,7 +63,7 @@ exports.createAppointmentCheckout = async (req, res) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `Appointment with ${appointment.trainer.name || 'Trainer'}`,
+              name: `Appointment with ${appointment.trainer?.user?.name || 'Trainer'}`,
               description: `${appointment.date} at ${appointment.startTime}`
             },
             unit_amount: Math.round(appointment.price * 100) // Convert to cents
@@ -220,8 +222,8 @@ exports.getCheckoutSession = async (req, res) => {
       });
     }
     
-    // Check if session belongs to user
-    if (session.metadata.userId !== req.user.id) {
+    // Check if session belongs to user (metadata.userId is set in checkout.utils)
+    if (session.metadata?.userId && session.metadata.userId !== req.user.id) {
       return res.status(403).json({
         status: 'fail',
         message: 'You do not have permission to access this session'
@@ -229,7 +231,7 @@ exports.getCheckoutSession = async (req, res) => {
     }
     
     // Handle different checkout types
-    if (session.metadata.appointmentId) {
+    if (session.metadata?.appointmentId) {
       // Update appointment payment status
       await Appointment.findByIdAndUpdate(session.metadata.appointmentId, {
         status: session.payment_status === 'paid' ? 'confirmed' : 'pending',
@@ -237,11 +239,13 @@ exports.getCheckoutSession = async (req, res) => {
       });
       
       // Update payment status
-      await Payment.findByIdAndUpdate(session.metadata.paymentId, {
-        status: session.payment_status === 'paid' ? 'completed' : 'pending',
-        stripePaymentId: session.payment_intent
-      });
-    } else if (session.metadata.subscriptionId) {
+      if (session.metadata.paymentId) {
+        await Payment.findByIdAndUpdate(session.metadata.paymentId, {
+          status: session.payment_status === 'paid' ? 'completed' : 'pending',
+          stripePaymentId: session.payment_intent || session.id
+        });
+      }
+    } else if (session.metadata?.subscriptionId) {
       // Update subscription status
       await Subscription.findByIdAndUpdate(session.metadata.subscriptionId, {
         status: session.payment_status === 'paid' ? 'active' : 'pending',

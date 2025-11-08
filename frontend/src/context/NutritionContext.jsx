@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from './auth';
@@ -7,16 +8,16 @@ export const NutritionProvider = ({ children }) => {
   const [nutritionPlans, setNutritionPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (currentUser) {
+    if (!authLoading && currentUser) {
       fetchNutritionPlans();
-    } else {
+    } else if (!authLoading && !currentUser) {
       setNutritionPlans([]);
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, authLoading]);
 
   const fetchNutritionPlans = async () => {
     try {

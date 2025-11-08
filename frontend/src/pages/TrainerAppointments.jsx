@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAppointments } from '../context/AppointmentContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useAppointments } from '../context/appointment';
+import { useAuth } from '../context/auth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';

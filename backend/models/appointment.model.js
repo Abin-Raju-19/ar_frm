@@ -38,6 +38,10 @@ const appointmentSchema = new mongoose.Schema({
     enum: ['gym', 'online', 'home', 'other'],
     required: [true, 'Please provide appointment location']
   },
+  price: {
+    type: Number,
+    default: 0
+  },
   notes: String,
   payment: {
     type: mongoose.Schema.Types.ObjectId,

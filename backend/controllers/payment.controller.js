@@ -62,7 +62,6 @@ exports.createPaymentIntent = async (req, res) => {
  */
 exports.handleWebhook = async (req, res) => {
   const webhookHandlers = require('../utils/webhook.handlers');
-  const stripeMiddleware = require('../middleware/stripe.middleware');
   
   try {
     // Verify the webhook signature

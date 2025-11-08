@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNutrition } from '../context/NutritionContext';
-import { useAuth } from '../context/AuthContext';
+import { useNutrition } from '../context/nutrition';
+import { useAuth } from '../context/auth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';

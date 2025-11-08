@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth';
 import Layout from '../components/layout/Layout';
@@ -42,7 +42,21 @@ export default function Login() {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+      const status = err?.response?.status;
+      const backendMsg = err?.response?.data?.message;
+      let message = backendMsg || err?.message || 'Failed to login. Please check your credentials.';
+
+      if (status === 401) {
+        message = 'Incorrect email or password';
+      } else if (status === 400) {
+        message = backendMsg || 'Invalid request. Please verify your input.';
+      } else if (status >= 500) {
+        message = 'Server error. Please try again later.';
+      } else if (!status && err?.code === 'ERR_NETWORK') {
+        message = 'Network error. Please check your connection.';
+      }
+
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -124,10 +138,9 @@ export default function Login() {
               type="submit"
               variant="primary"
               className="w-full"
-              loading={loading}
               disabled={loading}
             >
-              Sign in
+              {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
             <div className="text-center mt-4">

@@ -1,3 +1,4 @@
+import React from 'react';
 import { AuthProvider } from './AuthContext';
 import { AppointmentProvider } from './AppointmentContext';
 import { WorkoutProvider } from './WorkoutContext';

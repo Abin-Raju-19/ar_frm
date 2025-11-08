@@ -1,26 +1,33 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AppProvider } from './context/AppProvider';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import TrainerDashboard from './pages/TrainerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
-import Appointments from './pages/Appointments';
-import TrainerAppointments from './pages/TrainerAppointments';
-import AdminAppointments from './pages/AdminAppointments';
-import Workouts from './pages/Workouts';
-import TrainerWorkouts from './pages/TrainerWorkouts';
-import AdminWorkouts from './pages/AdminWorkouts';
-import Nutrition from './pages/Nutrition';
-import TrainerNutrition from './pages/TrainerNutrition';
-import AdminNutrition from './pages/AdminNutrition';
-import Payments from './pages/Payments';
-import TrainerPayments from './pages/TrainerPayments';
-import AdminPayments from './pages/AdminPayments';
 import ComponentDemo from './pages/ComponentDemo';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/auth';
+
+// Lazy-loaded dashboards to avoid fetching on unauthenticated redirects
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const TrainerDashboard = lazy(() => import('./pages/TrainerDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+
+const Appointments = lazy(() => import('./pages/Appointments'));
+const TrainerAppointments = lazy(() => import('./pages/TrainerAppointments'));
+const AdminAppointments = lazy(() => import('./pages/AdminAppointments'));
+
+const Workouts = lazy(() => import('./pages/Workouts'));
+const TrainerWorkouts = lazy(() => import('./pages/TrainerWorkouts'));
+const AdminWorkouts = lazy(() => import('./pages/AdminWorkouts'));
+
+const Nutrition = lazy(() => import('./pages/Nutrition'));
+const TrainerNutrition = lazy(() => import('./pages/TrainerNutrition'));
+const AdminNutrition = lazy(() => import('./pages/AdminNutrition'));
+
+const Payments = lazy(() => import('./pages/Payments'));
+const TrainerPayments = lazy(() => import('./pages/TrainerPayments'));
+const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -64,7 +71,9 @@ function App() {
             path="/dashboard" 
             element={
               <ProtectedRoute allowedRoles={['user']}>
-                <Dashboard />
+                <Suspense fallback={<div className="p-6">Loading Dashboard...</div>}>
+                  <Dashboard />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -72,7 +81,9 @@ function App() {
             path="/appointments" 
             element={
               <ProtectedRoute allowedRoles={['user']}>
-                <Appointments />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <Appointments />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -80,7 +91,9 @@ function App() {
             path="/workouts" 
             element={
               <ProtectedRoute allowedRoles={['user']}>
-                <Workouts />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <Workouts />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -88,7 +101,9 @@ function App() {
             path="/nutrition" 
             element={
               <ProtectedRoute allowedRoles={['user']}>
-                <Nutrition />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <Nutrition />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -96,7 +111,9 @@ function App() {
             path="/payments" 
             element={
               <ProtectedRoute allowedRoles={['user']}>
-                <Payments />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <Payments />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -105,7 +122,9 @@ function App() {
             path="/trainer" 
             element={
               <ProtectedRoute allowedRoles={['trainer']}>
-                <TrainerDashboard />
+                <Suspense fallback={<div className="p-6">Loading Trainer Dashboard...</div>}>
+                  <TrainerDashboard />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -113,7 +132,9 @@ function App() {
             path="/trainer/appointments" 
             element={
               <ProtectedRoute allowedRoles={['trainer']}>
-                <TrainerAppointments />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <TrainerAppointments />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -121,7 +142,9 @@ function App() {
             path="/trainer/workouts" 
             element={
               <ProtectedRoute allowedRoles={['trainer']}>
-                <TrainerWorkouts />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <TrainerWorkouts />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -129,7 +152,9 @@ function App() {
             path="/trainer/nutrition" 
             element={
               <ProtectedRoute allowedRoles={['trainer']}>
-                <TrainerNutrition />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <TrainerNutrition />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -137,7 +162,9 @@ function App() {
             path="/trainer/payments" 
             element={
               <ProtectedRoute allowedRoles={['trainer']}>
-                <TrainerPayments />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <TrainerPayments />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -146,7 +173,9 @@ function App() {
             path="/admin" 
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+                <Suspense fallback={<div className="p-6">Loading Admin Dashboard...</div>}>
+                  <AdminDashboard />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -154,7 +183,9 @@ function App() {
             path="/admin/appointments" 
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminAppointments />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <AdminAppointments />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -162,7 +193,9 @@ function App() {
             path="/admin/workouts" 
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminWorkouts />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <AdminWorkouts />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -170,7 +203,9 @@ function App() {
             path="/admin/nutrition" 
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminNutrition />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <AdminNutrition />
+                </Suspense>
               </ProtectedRoute>
             } 
           />
@@ -178,7 +213,9 @@ function App() {
             path="/admin/payments" 
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminPayments />
+                <Suspense fallback={<div className="p-6">Loading...</div>}>
+                  <AdminPayments />
+                </Suspense>
               </ProtectedRoute>
             } 
           />

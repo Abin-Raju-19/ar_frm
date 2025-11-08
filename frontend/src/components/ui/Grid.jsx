@@ -1,5 +1,4 @@
 import React from 'react';
-
 export default function Grid({
   children,
   cols = { default: 1, sm: 2, md: 3, lg: 4 },

@@ -1,8 +1,11 @@
+import React from 'react';
 import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from './auth';
 
 const PaymentContext = createContext();
+
+export default PaymentContext;
 
 // usePayments hook moved to PaymentContext.hooks.jsx for fast-refresh compatibility
 
@@ -13,20 +16,22 @@ export const PaymentProvider = ({ children }) => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (currentUser) {
-      fetchPaymentMethods();
-      fetchPayments();
-      fetchSubscriptions();
-    } else {
+    if (!authLoading && currentUser) {
+      Promise.all([
+        fetchPaymentMethods(),
+        fetchPayments(),
+        fetchSubscriptions(),
+      ]);
+    } else if (!authLoading && !currentUser) {
       setPaymentMethods([]);
       setPayments([]);
       setSubscriptions([]);
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, authLoading]);
 
   const fetchPaymentMethods = async () => {
     try {
@@ -39,7 +44,8 @@ export const PaymentProvider = ({ children }) => {
         },
       };
       const response = await axios.get('/api/payment-methods', config);
-      setPaymentMethods(response.data);
+      const methods = response.data?.data?.paymentMethods || [];
+      setPaymentMethods(methods);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching payment methods:', error);
@@ -59,7 +65,8 @@ export const PaymentProvider = ({ children }) => {
         },
       };
       const response = await axios.get('/api/payments', config);
-      setPayments(response.data);
+      const list = response.data?.data?.payments || [];
+      setPayments(list);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -79,7 +86,8 @@ export const PaymentProvider = ({ children }) => {
         },
       };
       const response = await axios.get('/api/subscriptions', config);
-      setSubscriptions(response.data);
+      const subs = response.data?.data?.subscriptions || [];
+      setSubscriptions(subs);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
@@ -119,7 +127,10 @@ export const PaymentProvider = ({ children }) => {
         { paymentMethodId },
         config
       );
-      setPaymentMethods([...paymentMethods, response.data]);
+      const newMethod = response.data?.data?.paymentMethod;
+      if (newMethod) {
+        setPaymentMethods([...paymentMethods, newMethod]);
+      }
       return response.data;
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to add payment method');
@@ -196,6 +207,31 @@ export const PaymentProvider = ({ children }) => {
     }
   };
 
+  const cancelSubscription = async (subscriptionId) => {
+    try {
+      setError(null);
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.patch(
+        `/api/payments/subscriptions/${subscriptionId}/cancel`,
+        {},
+        config
+      );
+      // Refresh subscriptions after canceling
+      await fetchSubscriptions();
+      return response.data;
+    } catch (error) {
+      setError(
+        error.response?.data?.message || 'Failed to cancel subscription'
+      );
+      throw error;
+    }
+  };
+
   const value = {
     paymentMethods,
     payments,
@@ -210,7 +246,9 @@ export const PaymentProvider = ({ children }) => {
     setDefaultPaymentMethod,
     deletePaymentMethod,
     createSubscriptionCheckout,
+    cancelSubscription,
   };
 
   return <PaymentContext.Provider value={value}>{children}</PaymentContext.Provider>;
 };
+

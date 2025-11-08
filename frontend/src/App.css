@@ -1,15 +1,35 @@
+/* @tailwind base; */
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+/* @tailwind base; */
+@import "tailwindcss/components";
+@import "tailwindcss/base";
+@import "tailwindcss/utilities";
+
 #root {
-  max-width: 1280px;
+  max-width: 128px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 1%;
+  padding: 1%;
+  will-change: filter;
+  animation: logo-spin infinite 20s linear;
+  transition: filter 300ms;
+  cursor: pointer;
+  user-select: none;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react {
   will-change: filter;
   transition: filter 300ms;
+  cursor: pointer;
+  user-select: none;
 }
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);

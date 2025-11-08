@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useWorkouts } from '../context/WorkoutContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useWorkouts } from '../context/workout';
+import { useAuth } from '../context/auth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -49,21 +50,36 @@ const TrainerWorkouts = () => {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        // This would be replaced with an actual API call
-        const response = await fetch('/api/trainer/clients', {
+        const token = localStorage.getItem('token');
+        const config = {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
           },
-        });
-        const data = await response.json();
-        setClients(data);
+        };
+        // First get trainer profile to get trainer ID
+        const trainerResponse = await axios.get('/api/trainers', config);
+        const trainers = trainerResponse.data?.data?.trainers || [];
+        const currentTrainer = trainers.find(t => t.user?._id === currentUser?._id || t.user === currentUser?._id);
+        
+        if (currentTrainer) {
+          // Get trainer's clients
+          const clientsResponse = await axios.get(`/api/trainers/${currentTrainer._id}/clients`, config);
+          const clientsData = clientsResponse.data?.data?.clients || [];
+          setClients(clientsData.map(client => ({
+            id: client._id,
+            name: client.name
+          })));
+        }
       } catch (error) {
         console.error('Error fetching clients:', error);
+        setClients([]);
       }
     };
 
-    fetchClients();
-  }, []);
+    if (currentUser) {
+      fetchClients();
+    }
+  }, [currentUser]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -181,18 +197,17 @@ const TrainerWorkouts = () => {
         return;
       }
 
-      // This would be replaced with an actual API call
-      await fetch('/api/trainer/assign-workout', {
-        method: 'POST',
+      // Assign workout to client by updating the workout with user ID
+      const token = localStorage.getItem('token');
+      const config = {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          workoutId: selectedWorkout._id,
-          clientId: selectedClient,
-        }),
-      });
+      };
+      await axios.patch(`/api/workouts/${selectedWorkout._id}`, {
+        user: selectedClient
+      }, config);
 
       setFormSuccess(`Workout assigned to client successfully!`);
       setIsAssignModalOpen(false);
