@@ -7,10 +7,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://ar-frm.onrender.com',
+        target: 'https://ar-frm-five.vercel.app',
         changeOrigin: true,
       },
     },
   },
 })
-
